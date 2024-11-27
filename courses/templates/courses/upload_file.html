@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты парсинга</title>
+</head>
+<body>
+    <h1>Загрузите файл</h1>
+    <form method="post" enctype="multipart/form-data" action="{% url 'upload_file' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Загрузить</button>
+    </form>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    {% if parsed_data %}
+        <h2>Название курса: {{ parsed_data.course_title }}</h2>
+        <p>Описание курса: {{ parsed_data.course_description }}</p>
+
+        <h3>Модули:</h3>
+        <ul>
+            {% for module in parsed_data.modules %}
+                <li>{{ module.module_title }}
+                    <ul>
+                        {% for lesson in module.lessons %}
+                            <li>Урок: {{ lesson.lesson_title }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Кнопка для добавления курсов -->
+        <form method="post" action="{% url 'add_courses' %}">
+            {% csrf_token %}
+            <button type="submit">Добавить курсы</button>
+        </form>
+    {% endif %}
+</body>
+</html>

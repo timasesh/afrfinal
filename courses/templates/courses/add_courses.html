@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить курс</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Добавить курс</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="file">Выберите файл:</label>
+            <input type="file" name="file" class="form-control" id="file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Загрузить</button>
+        <a href="{% url 'admin_page' %}" class="btn btn-success">Выйти</a>
+    </form>
+
+    {% if preview %}
+        <h3>Предварительный просмотр данных</h3>
+        <div class="table-responsive">
+            {{ preview|safe }}
+        </div>
+        <form method="POST" action="{% url 'create_objects' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success mt-3">Создать объекты</button>
+        </form>
+    {% endif %}
+
+    {% if success %}
+        <div class="alert alert-success mt-3">{{ success }}</div>
+    {% endif %}
+
+    {% if error %}
+        <div class="alert alert-danger mt-3">{{ error }}</div>
+    {% endif %}
+</div>
+</body>
+</html>

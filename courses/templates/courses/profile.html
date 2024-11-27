@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+
+<header class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <button class="btn btn-outline-light" onclick="window.history.back();">Назад</button>
+        <span class="navbar-brand mb-0 h1">Профиль</span>
+        <a href="{% url 'logout' %}" class="btn btn-outline-light" id="logout-btn">Выйти</a>
+    </div>
+</header>
+
+<div class="container mt-4">
+    <h2>Прогресс по курсам</h2>
+    <div class="progress-list">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Название курса</th>
+                    <th>Прогресс</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in progress %}
+                <tr>
+                    <td>{{ p.course.title }}</td>
+                    <td>{{ p.progress }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="{% static 'main.js' %}"></script>
+</body>
+</html>

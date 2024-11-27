@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Информация о студенте</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+
+<header class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">ADMIN</span>
+        <a href="{% url 'logout' %}" class="btn btn-outline-light" id="logout-btn">Выйти</a>
+    </div>
+</header>
+
+<div class="container mt-4">
+    <h2>Детали студента</h2>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>Имя пользователя:</th>
+                    <td>{{ student.username }}</td>
+                </tr>
+                <tr>
+                    <th>Номер телефона:</th>
+                    <td>{{ student.phone_number|default:"Не указан" }}</td>
+                </tr>
+                <tr>
+                    <th>Email:</th>
+                    <td>{{ student.email|default:"Не указан" }}</td>
+                </tr>
+                <tr>
+                    <th>Курсы:</th>
+                    <td>
+                        {% for course in student.courses.all %}
+                            {{ course.title }}<br>
+                        {% empty %}
+                            Нет курсов
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Процент прохождения:</th>
+                    <td>
+                        {% for progress in student.studentprogress_set.all %}
+                            {{ progress.progress }}%<br>
+                        {% empty %}
+                            Нет данных о прогрессе
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Department:</th>
+                    <td>{{ student.department|default:"Не указан" }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if form %}
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </form>
+        {% endif %}
+    <h2></h2>
+    <a href="{% url 'admin_page' %}" class="btn btn-primary">Назад к списку студентов</a>
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

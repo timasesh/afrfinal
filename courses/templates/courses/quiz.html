@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прохождение квиза: {{ quiz.title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #ffffff;
+            font-family: 'Arial', sans-serif;
+        }
+        .quiz-container {
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s;
+            border: 2px solid #007bff;
+            transition: border-color 0.3s;
+        }
+        .quiz-container:hover {
+            border-color: #0056b3;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        h1 {
+            color: #333;
+            font-weight: bold;
+        }
+        .question-container {
+            margin-bottom: 20px;
+        }
+        .answer-btn {
+            margin: 10px 0;
+            width: 100%;
+            transition: all 0.3s;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .answer-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        .answer-btn.selected {
+            background-color: #007bff !important;
+            color: white !important;
+        }
+        #result {
+            display: none;
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+        }
+        .result-message {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #28a745;
+        }
+        .finish-btn {
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div id="quizData" data-quiz-id="{{ quiz.id }}"></div>
+        <div id="questionsContainer">
+            {% for question in questions %}
+            <div class="question-container {% if forloop.first %}active{% endif %}">
+                <h5>{{ forloop.counter }}: {{ question.text }}</h5>
+                {% for answer in question.answers.all %}
+                <button class="btn btn-outline-primary answer-btn" data-is-correct="{{ answer.is_correct }}">
+                    {{ answer.text }}
+                </button>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <button id="finishBtn" class="btn btn-success finish-btn" style="display: none;">Завершить квиз</button>
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const quizId = document.getElementById('quizData').getAttribute('data-quiz-id');
+        const questions = document.querySelectorAll('.question-container');
+        const resultDiv = document.getElementById('result');
+        const finishBtn = document.getElementById('finishBtn');
+        let answeredQuestions = new Set(); // Множество для отслеживания отвеченных вопросов
+
+        // Функция показа текущего вопроса
+        function showQuestion(index) {
+            questions.forEach((question, i) => {
+                question.classList.toggle('active', i === index);
+            });
+        }
+
+        // Обработчик клика по кнопке ответа
+        document.querySelectorAll('.answer-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                if (finishBtn.disabled) return;
+
+                const currentButtons = this.parentElement.querySelectorAll('.answer-btn');
+
+                currentButtons.forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+
+                const questionIndex = Array.from(questions).indexOf(this.parentElement);
+                answeredQuestions.add(questionIndex);
+
+                if (answeredQuestions.size === questions.length) {
+                    finishBtn.style.display = 'block';
+                }
+            });
+        });
+
+        // Обработчик клика по кнопке завершения квиза
+        finishBtn.addEventListener('click', function() {
+            let correctAnswersCount = 0;
+
+            document.querySelectorAll('.question-container').forEach(question => {
+                const selectedAnswer = question.querySelector('.answer-btn.selected');
+                if (selectedAnswer && selectedAnswer.getAttribute('data-is-correct') === 'True') {
+                    correctAnswersCount++;
+                }
+            });
+
+            // Отправка результата на сервер
+            fetch(`/quiz/${quizId}/submit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ score: correctAnswersCount })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    resultDiv.textContent = `Вы ответили правильно на ${correctAnswersCount} из ${questions.length} вопросов.`;
+                    resultDiv.style.display = 'block';
+                    finishBtn.style.display = 'none';
+
+                    // Деактивация кнопок и подсветка правильных/неправильных ответов
+                    document.querySelectorAll('.answer-btn').forEach(button => {
+                        button.disabled = true;
+                        if (button.getAttribute('data-is-correct') === 'True') {
+                            button.classList.add('btn-success');
+                        } else {
+                            button.classList.add('btn-danger');
+                        }
+                    });
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при отправке данных:', error);
+                alert('Произошла ошибка при отправке данных. Пожалуйста, попробуйте еще раз.');
+            });
+
+            finishBtn.disabled = true;
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                cookies.forEach(cookie => {
+                    if (cookie.trim().startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    }
+                });
+            }
+            return cookieValue;
+        }
+        finishBtn.addEventListener('click', function() {
+            let correctAnswersCount = 0;
+
+            // Подсчёт правильных ответов
+            document.querySelectorAll('.question-container').forEach(question => {
+                const selectedAnswer = question.querySelector('.answer-btn.selected');
+                if (selectedAnswer && selectedAnswer.getAttribute('data-is-correct') === 'True') {
+                    correctAnswersCount++;
+                }
+            });
+
+            // Отправка результата на сервер
+            fetch(`/quiz/${quizId}/submit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') // Получение CSRF-токена
+                },
+                body: JSON.stringify({ score: correctAnswersCount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.textContent = `Вы ответили правильно на ${correctAnswersCount} из ${questions.length} вопросов.`;
+                    resultDiv.style.display = 'block';
+                    finishBtn.style.display = 'none';
+
+                    // Деактивация кнопок и подсветка правильных/неправильных ответов
+                    document.querySelectorAll('.answer-btn').forEach(button => {
+                        button.disabled = true;
+                        if (button.getAttribute('data-is-correct') === 'True') {
+                            button.classList.add('btn-success'); // Подсветка правильных
+                        } else {
+                            button.classList.add('btn-danger'); // Подсветка неправильных
+                        }
+                    });
+                } else {
+                    alert(data.message); // Обработка ошибок
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при отправке данных:', error);
+                alert('Произошла ошибка при отправке данных. Пожалуйста, попробуйте еще раз.');
+            });
+
+            // Отключаем кнопку завершения
+            finishBtn.disabled = true;
+        });
+
+    </script>
+
+
+</body>
+</html>
